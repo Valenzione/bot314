@@ -1,12 +1,11 @@
-import random
-from itertools import groupby, dropwhile
-
-import telebot
-import database
-from telebot import types
+from itertools import cycle
+from itertools import dropwhile
 
 import config
-from itertools import cycle
+import telebot
+from telebot import types
+
+from bot314 import database
 
 bot = telebot.TeleBot(config.token)
 
