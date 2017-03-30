@@ -1,8 +1,8 @@
-import config
 import telebot
-import utils
 
-from bot314 import database
+import config
+import utils
+import database
 
 bot = telebot.TeleBot(config.token)
 
