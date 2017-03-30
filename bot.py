@@ -57,7 +57,8 @@ def callback_inline(call):
                                   reply_markup=keyboard)
         if call.data == "tt":
             bot.edit_message_text(chat_id=call.message.chat.id,
-                                  message_id=call.message.message_id, text=utils.get_oreder_table(),
+                                  message_id=call.message.message_id,
+                                  text=utils.get_water_history() + "\n" + utils.get_trash_history() + "\n" + utils.get_oreder_table(),
                                   parse_mode="Markdown")
 
 

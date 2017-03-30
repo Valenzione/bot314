@@ -40,3 +40,18 @@ def get_trash_user():
 def get_active_users():
     cursor = db.users.find({"active": True})
     return list(cursor)
+
+
+def get_water_logs():
+    cursor = db.water.find().sort("date", -1)
+    return (cursor)[:len(get_active_users()):]
+
+
+def get_trash_logs():
+    cursor = db.trash.find().sort("date", -1)
+    return list(cursor)[:len(get_active_users()):]
+
+
+def get_users():
+    cursor = db.users.find()
+    return {u['user_id']: u['name'] for u in cursor}
