@@ -10,25 +10,33 @@ from itertools import cycle
 
 bot = telebot.TeleBot(config.token)
 
+def generate_markup(chat_id):
+    # TODO: Get chat_id and based on that generate markup
+    # If user is not assigned to room - ask for rooms secret or allow room init
+    # If user is assigned to room show him buttons :water/trash/info/temporarily leave.
+    # Room creator can kick users out of room
 
-def generate_markup(data):
-    global answer_list, callback_list
-    if data == "init":
-        answer_list = ["Я сделал", "Я хочу", "Расписание и История"]
-        callback_list = ["done", "tobe", "tt"]
-    if data == "done":
-        answer_list = ["Я вынес мусор", "Я принес воду", "Назад"]
-        callback_list = ["trash_done", "water_done", "back"]
-    if data == "tobe":
-        answer_list = ["Я хочу чтобы вынесли мусор", "Я хочу чтобы принесли воду", "Назад"]
-        callback_list = ["trash", "water", "back"]
+    user = database.get_user(chat_id)
+    # global answer_list, callback_list
+    # if data == "init":
+    #     answer_list = ["Я сделал", "Я хочу", "Расписание и История"]
+    #     callback_list = ["done", "tobe", "tt"]
+    # if data == "done":
+    #     answer_list = ["Я вынес мусор", "Я принес воду", "Назад"]
+    #     callback_list = ["trash_done", "water_done", "back"]
+    # if data == "tobe":
+    #     answer_list = ["Я хочу чтобы вынесли мусор", "Я хочу чтобы принесли воду", "Назад"]
+    #     callback_list = ["trash", "water", "back"]
+    #
+    # keyboard = types.InlineKeyboardMarkup()
+    # for i in range(len(answer_list)):
+    #     b = types.InlineKeyboardButton(text=answer_list[i], callback_data=callback_list[i])
+    #     keyboard.add(b)
 
     keyboard = types.InlineKeyboardMarkup()
-    for i in range(len(answer_list)):
-        b = types.InlineKeyboardButton(text=answer_list[i], callback_data=callback_list[i])
-        keyboard.add(b)
-
+    keyboard.add(types.InlineKeyboardButton(text=user.name, callback_data='username'))
     return keyboard
+
 
 
 def send_message(recevier_id, message):

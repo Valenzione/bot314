@@ -1,67 +1,55 @@
 import telebot
-
+import cherrypy
 import config
 import utils
-import database
+
+WEBHOOK_HOST = '207.154.241.25'
+WEBHOOK_PORT = 443  # 443, 80, 88 или 8443 (порт должен быть открыт!)
+WEBHOOK_LISTEN = '0.0.0.0'  # На некоторых серверах придется указывать такой же IP, что и выше
+
+WEBHOOK_SSL_CERT = './webhook_cert.pem'  # Путь к сертификату
+WEBHOOK_SSL_PRIV = './webhook_pkey.pem'  # Путь к приватному ключу
+
+WEBHOOK_URL_BASE = "https://%s:%s" % (WEBHOOK_HOST, WEBHOOK_PORT)
+WEBHOOK_URL_PATH = "/%s/" % config.token
 
 bot = telebot.TeleBot(config.token)
 
 
-# Обычный режим
-@bot.message_handler(commands=['start'])
-def start(message):
-    keyboard = utils.generate_markup("init")
-    bot.send_message(message.chat.id, "Бот дающий указания", reply_markup=keyboard)
+class WebhookServer(object):
+    @cherrypy.expose
+    def index(self):
+        if 'content-length' in cherrypy.request.headers and \
+                        'content-type' in cherrypy.request.headers and \
+                        cherrypy.request.headers['content-type'] == 'application/json':
+            length = int(cherrypy.request.headers['content-length'])
+            json_string = cherrypy.request.body.read(length).decode("utf-8")
+            update = telebot.types.Update.de_json(json_string)
+            # Эта функция обеспечивает проверку входящего сообщения
+            bot.process_new_updates([update])
+            return ''
+        else:
+            raise cherrypy.HTTPError(403)
 
 
-@bot.callback_query_handler(func=lambda call: True)
-def callback_inline(call):
-    if call.message:
-        if call.data == "done":
-            keyboard = utils.generate_markup(call.data)
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text="Что ты сделал?", reply_markup=keyboard)
-        if call.data == "tobe":
-            keyboard = utils.generate_markup(call.data)
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text="Что ты хочешь?",
-                                  reply_markup=keyboard)
-        if call.data == "water":
-            water_user = utils.get_next_user(database.get_water_user())
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text="Воду выносит " + water_user['name'] + " aka " + water_user['alias'])
-            utils.send_message(water_user['chat_id'], "Принеси воду")
-
-        if call.data == "trash":
-            trash_user = utils.get_next_user(database.get_trash_user())
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text="Воду выносит " + trash_user['name'] + " aka " + trash_user['alias'])
-            utils.send_message(trash_user['chat_id'], "Вынеси мусор")
-
-        if call.data == "water_done":
-            water_user = utils.get_next_user(database.get_water_user())
-            database.log_water(water_user['user_id'])
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text="Молодец")
-
-        if call.data == "trash_done":
-            trash_user = utils.get_next_user(database.get_trash_user())
-            database.log_trash(trash_user['user_id'])
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text="Молодец")
-
-        if call.data == "back" or call.data == "back1":
-            keyboard = utils.generate_markup("init")
-            bot.edit_message_text(chat_id=call.message.chat.id,
-                                  message_id=call.message.message_id, text="Бот устанавливающий порядок",
-                                  reply_markup=keyboard)
-        if call.data == "tt":
-            bot.edit_message_text(chat_id=call.message.chat.id,
-                                  message_id=call.message.message_id,
-                                  text=utils.get_water_history() + "\n" + utils.get_trash_history() + "\n" + utils.get_oreder_table(),
-                                  parse_mode="Markdown")
+@bot.message_handler(func=lambda message: True, content_types=['text'])
+def echo_message(message):
+    bot.reply_to(message, message.chat.first_name)
+    keyboard = utils.generate_markup(message.chat.id)
+    bot.send_message(message.chat.id, "Блэт, Навальный", reply_markup=keyboard)
 
 
-if __name__ == '__main__':
-    print("Bot polling started!")
-    bot.polling(none_stop=True)
+bot.remove_webhook()
+
+bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH,
+                certificate=open(WEBHOOK_SSL_CERT, 'r'))
+
+cherrypy.config.update({
+    'server.socket_host': WEBHOOK_LISTEN,
+    'server.socket_port': WEBHOOK_PORT,
+    'server.ssl_module': 'builtin',
+    'server.ssl_certificate': WEBHOOK_SSL_CERT,
+    'server.ssl_private_key': WEBHOOK_SSL_PRIV
+})
+
+cherrypy.quickstart(WebhookServer(), WEBHOOK_URL_PATH, {'/': {}})

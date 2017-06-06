@@ -8,6 +8,14 @@ client = MongoClient(config.db_uri)
 db = client.heroku_76pgrdhp
 
 
+
+#TODO: get User by Chat ID
+def get_user(chat_id):
+    user = db.users.find({"chat_id": chat_id})
+    return user
+
+#TODO: get Room by Room ID
+
 # Store record of bringing the water by this user_id
 def log_water(user_id):
     db.water.insert_one({
