@@ -15,7 +15,6 @@ def get_user(chat_id):
     return user
 
 #TODO: get Room by Room ID
-
 # Store record of bringing the water by this user_id
 def log_water(user_id):
     db.water.insert_one({
