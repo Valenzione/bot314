@@ -3,16 +3,6 @@ import cherrypy
 import config
 import utils
 
-WEBHOOK_HOST = '207.154.241.25'
-WEBHOOK_PORT = 443  # 443, 80, 88 или 8443 (порт должен быть открыт!)
-WEBHOOK_LISTEN = '0.0.0.0'  # На некоторых серверах придется указывать такой же IP, что и выше
-
-WEBHOOK_SSL_CERT = './webhook_cert.pem'  # Путь к сертификату
-WEBHOOK_SSL_PRIV = './webhook_pkey.pem'  # Путь к приватному ключу
-
-WEBHOOK_URL_BASE = "https://%s:%s" % (WEBHOOK_HOST, WEBHOOK_PORT)
-WEBHOOK_URL_PATH = "/%s/" % config.token
-
 bot = telebot.TeleBot(config.token)
 
 
@@ -39,17 +29,17 @@ def echo_message(message):
     bot.send_message(message.chat.id, "Блэт, Навальный", reply_markup=keyboard)
 
 
-bot.remove_webhook()
+if __name__ == "__main__":
 
-bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH,
-                certificate=open(WEBHOOK_SSL_CERT, 'r'))
+    bot.remove_webhook()
+    bot.set_webhook(url=config.WEBHOOK_URL_BASE + config.WEBHOOK_URL_PATH,
+                    certificate=open(config.WEBHOOK_SSL_CERT, 'r'))
 
-cherrypy.config.update({
-    'server.socket_host': WEBHOOK_LISTEN,
-    'server.socket_port': WEBHOOK_PORT,
-    'server.ssl_module': 'builtin',
-    'server.ssl_certificate': WEBHOOK_SSL_CERT,
-    'server.ssl_private_key': WEBHOOK_SSL_PRIV
-})
-
-cherrypy.quickstart(WebhookServer(), WEBHOOK_URL_PATH, {'/': {}})
+    cherrypy.config.update({
+        'server.socket_host': config.WEBHOOK_LISTEN,
+        'server.socket_port': config.WEBHOOK_PORT,
+        'server.ssl_module': 'builtin',
+        'server.ssl_certificate': config.WEBHOOK_SSL_CERT,
+        'server.ssl_private_key': config.WEBHOOK_SSL_PRIV
+    })
+    cherrypy.quickstart(WebhookServer(), config.WEBHOOK_URL_PATH, {'/': {}})

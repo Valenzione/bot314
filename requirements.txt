@@ -1,3 +1,4 @@
+cherrypy
 telebot
 pyTelegramBotAPI==2.1.4
 pymongo
